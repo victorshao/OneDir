@@ -9,20 +9,30 @@ class OneDirHandler(FileSystemEventHandler):
     def on_created(self, event):
         pos = event.src_path.find('OneDir')
         path = event.src_path[:pos] + 'TwoDir' + event.src_path[pos+6:]
-        shutil.copy(event.src_path, path)
+        if event.is_directory:
+            shutil.copytree(event.src_path, path)
+        else:
+            shutil.copy(event.src_path, path)
         print 'File created.'
 
     def on_deleted(self, event):
         pos = event.src_path.find('OneDir')
         path = event.src_path[:pos] + 'TwoDir' + event.src_path[pos+6:]
-        os.remove(path)
+        if event.is_directory:
+            shutil.rmtree(path)
+        else:
+            os.remove(path)
         print 'File deleted.'
 
     def on_modified(self, event):
+        if not event.is_directory:
+            pos = event.src_path.find('OneDir')
+            path = event.src_path[:pos] + 'TwoDir' + event.src_path[pos+6:]
+            shutil.copy(event.src_path, path)
         print 'File modified.'
 
     def on_moved(self, event):
-        spos = event.src_path.find('OneDir')
+        pos = event.src_path.find('OneDir')
         spath = event.src_path[:pos] + 'TwoDir' + event.src_path[pos+6:]
         dpath = event.dest_path[:pos] + 'TwoDir' + event.dest_path[pos+6:]
         os.rename(spath, dpath)
