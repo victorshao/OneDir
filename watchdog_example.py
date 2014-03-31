@@ -18,6 +18,8 @@ class OneDirHandler(FileSystemEventHandler):
     def on_deleted(self, event):
         pos = event.src_path.find('OneDir')
         path = event.src_path[:pos] + 'TwoDir' + event.src_path[pos+6:]
+        print path
+        print event.is_directory
         if event.is_directory:
             shutil.rmtree(path)
         else:
