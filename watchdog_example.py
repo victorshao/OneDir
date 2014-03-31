@@ -1,24 +1,31 @@
 import time
+import os
+import shutil
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 class OneDirHandler(FileSystemEventHandler):
 
     def on_created(self, event):
-        print event.src_path
+        pos = event.src_path.find('OneDir')
+        path = event.src_path[:pos] + 'TwoDir' + event.src_path[pos+6:]
+        shutil.copy(event.src_path, path)
         print 'File created.'
 
     def on_deleted(self, event):
-        print event.src_path
+        pos = event.src_path.find('OneDir')
+        path = event.src_path[:pos] + 'TwoDir' + event.src_path[pos+6:]
+        os.remove(path)
         print 'File deleted.'
 
     def on_modified(self, event):
-        print event.src_path
         print 'File modified.'
 
     def on_moved(self, event):
-        print event.src_path
-        print event.dest_path
+        spos = event.src_path.find('OneDir')
+        spath = event.src_path[:pos] + 'TwoDir' + event.src_path[pos+6:]
+        dpath = event.dest_path[:pos] + 'TwoDir' + event.dest_path[pos+6:]
+        os.rename(spath, dpath)
         print 'File moved.'
 
 if __name__ == '__main__':
@@ -34,3 +41,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         observer.stop()
     observer.join()
+
