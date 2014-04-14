@@ -1,4 +1,5 @@
 import os
+import os.path as op
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash, session, abort, g
 from werkzeug.utils import secure_filename
 import sqlite3
@@ -136,6 +137,29 @@ def make_tree(path):
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'],
                                filename)
+
+@app.route('/delete', methods=['POST'])
+def delete():
+    # Get the name of the uploaded file
+    print request.data
+    file = request.data
+    print file
+    # Check if the file is one of the allowed types/extensions
+    if file and allowed_file(file.filename):
+        # Make the filename safe, remove unsupported chars
+        filename = secure_filename(file.filename)
+
+        return redirect(url_for('delete_file',
+                                filename=filename))
+
+@app.route('/delete/<filename>', methods=['POST'])
+def delete_file(filename):
+    path = UPLOAD_FOLDER + filename
+    print path
+    if op.exists(path):
+        os.remove(path)
+
+
 
 if __name__ == '__main__':
     app.run()
