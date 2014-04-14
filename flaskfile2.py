@@ -85,16 +85,35 @@ def index():
     return render_template("index.html")
 
 @app.route('/directory')
-def dirtree():
-    path = os.path.expanduser(u'~/PycharmProjects/Project OneDir/templates/uploads')
-    return render_template('directory.html', tree=make_tree(path))
+# def dirtree():
+#     path = os.path.expanduser(u'~/PycharmProjects/Project OneDir/templates/uploads')
+#     return render_template('directory.html', tree=make_tree(path))
 
 # Route that will process the file upload
-@app.route('/upload', methods=['POST'])
+@app.route('/upload/<filename>/', methods=['POST'])
+def uploadfileinsub(filename):
+    filenamesplit = filename.split('/')
+    path = UPLOAD_FOLDER
+    for i in range(0,len(filenamesplit)):
+        path += filenamesplit[i] + '/'
+        if not os.path.exists(path):
+            os.mkdir(path)
+    # Check if the file is one of the allowed types/extensions
+    #
+    # if file and allowed_file(file.filename):
+    #     # Make the filename safe, remove unsupported chars
+    #     filename = secure_filename(file.filename)
+    #     # Move the file form the temporal folder to
+    #     # the upload folder we setup
+    #     app.config['UPLOAD_FOLDER']=path
+    #     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+@app.route('/uploadsa', methods=['POST'])
 def upload():
+
     # Get the name of the uploaded file
     file = request.files['file']
     # Check if the file is one of the allowed types/extensions
+
     if file and allowed_file(file.filename):
         # Make the filename safe, remove unsupported chars
         filename = secure_filename(file.filename)
@@ -106,33 +125,35 @@ def upload():
         return redirect(url_for('uploaded_file',
                                 filename=filename))
 
-def make_tree(path):
-    tree = dict(name=os.path.basename(path), children=[])
-    try: lst = os.listdir(path)
-    except OSError:
-        pass #ignore errors
-    else:
-        for name in lst:
-            fn = os.path.join(path, name)
-            if os.path.isdir(fn):
-                tree['children'].append(make_tree(fn))
-            else:
-                tree['children'].append(dict(name=name))
-        itemlist = []
-        for item in tree['children']:
-            if(item!=None):
-                itemlist.append(item['name'])
-        for item in itemlist:
-            print(item)
-    return tree
 
-
-
+# def make_tree(path):
+#     tree = dict(name=os.path.basename(path), children=[])
+#     try: lst = os.listdir(path)
+#     except OSError:
+#         pass #ignore errors
+#     else:
+#         for name in lst:
+#             fn = os.path.join(path, name)
+#             if os.path.isdir(fn):
+#                 tree['children'].append(make_tree(fn))
+#             else:
+#                 tree['children'].append(dict(name=name))
+#         itemlist = []
+#         for item in tree['children']:
+#             if(item!=None):
+#                 itemlist.append(item['name'])
+#         for item in itemlist:
+#             print(item)
+#     return tree
+#
+#
+#
 
 # This route is expecting a parameter containing the name
 # of a file. Then it will locate that file on the upload
 # directory and show it on the browser, so if the user uploads
 # an image, that image is going to be show after the upload
+
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'],
