@@ -11,20 +11,26 @@ def removeDisallowedFilenameChars(filename):
     cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
     return ''.join(c for c in cleanedFilename if c in validFilenameChars)
 
+path = 'C:\Users\PShao\Pictures\stuff\manga\\'
+urlprime = 'http://127.0.0.1:5000/'
+
 class OneDirHandler(FileSystemEventHandler):
     def on_created(self, event):
-        url = 'http://127.0.0.1:5000/upload'
+        url = urlprime +'upload/'
         file = None
-        try:
+        if not event.is_directory:
+            print 1
             files = {'file': open(event.src_path,'r+')}
             r = requests.post(url,files=files)
-        except IOError:
-            print 'Folder object created'
+        else:
+            print 2
+            url += event.src_path.replace(path, '').replace(" ", "_") + '/'
+            r = requests.post(url)
 
 
 
     def on_deleted(self, event):
-        url = 'http://127.0.0.1:5000/delete/'
+        url = urlprime+ 'delete/'
         files = os.path.basename(event.src_path)
         files = removeDisallowedFilenameChars(files)
         files = files.replace(" ", "_")
@@ -43,26 +49,24 @@ class OneDirHandler(FileSystemEventHandler):
         destlist = dest.split('\\') #remove file name at the end of the dest path
         source = source.replace(sourcelist[len(sourcelist)-1],"")
         dest = dest.replace(destlist[len(destlist)-1], "")
-        print destlist[len(destlist)-1]
 
         if source != dest or sourcelist[len(sourcelist)-1] != destlist[len(destlist)-1] :
-            url = 'http://127.0.0.1:5000/delete/'
+            url = urlprime + 'delete/'
             files = os.path.basename(event.src_path)
             files = removeDisallowedFilenameChars(files)
             files = files.replace(" ", "_")
             url=url+files
             r= requests.post(url)
-            url = 'http://127.0.0.1:5000/upload'
+            url = urlprime+'upload'
             file = None
             try:
                 files = {'file': open(event.dest_path,'r+')}
                 r = requests.post(url,files=files)
             except IOError:
-                print 'Folder object created'
+                print ''
 
 
 if __name__ == '__main__':
-    path = 'C:\Users\PShao\Pictures\stuff\manga'
     handler = OneDirHandler()
     observer = Observer()
     observer.schedule(handler, path, recursive = True)
