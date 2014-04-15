@@ -11,19 +11,22 @@ def removeDisallowedFilenameChars(filename):
     cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
     return ''.join(c for c in cleanedFilename if c in validFilenameChars)
 
-path = 'C:\Users\PShao\Pictures\stuff\manga\\'
+path = 'C:\Users\PShao\Desktop\New folder\\'
 urlprime = 'http://127.0.0.1:5000/'
 
 class OneDirHandler(FileSystemEventHandler):
     def on_created(self, event):
-        url = urlprime +'upload/'
+        url = urlprime +'upload'
         file = None
         if not event.is_directory:
-            print 1
+            url += "file/"
             files = {'file': open(event.src_path,'r+')}
             r = requests.post(url,files=files)
+            url = url.replace("uploadfile/","move/")
+            url += event.src_path.replace(path, '').replace(" ", "_")
+            r = requests.post(url)
         else:
-            print 2
+            url += "/"
             url += event.src_path.replace(path, '').replace(" ", "_") + '/'
             r = requests.post(url)
 
@@ -31,15 +34,15 @@ class OneDirHandler(FileSystemEventHandler):
 
     def on_deleted(self, event):
         url = urlprime+ 'delete/'
-        files = os.path.basename(event.src_path)
-        files = removeDisallowedFilenameChars(files)
+        files = event.src_path.replace(path,'')
         files = files.replace(" ", "_")
         url=url+files
         r= requests.post(url)
 
     def on_modified(self, event):
-        self.on_deleted(event)
-        self.on_created(event)
+        if not event.is_directory:
+            self.on_deleted(event)
+            self.on_created(event)
 
 
     def on_moved(self, event):
@@ -51,19 +54,24 @@ class OneDirHandler(FileSystemEventHandler):
         dest = dest.replace(destlist[len(destlist)-1], "")
 
         if source != dest or sourcelist[len(sourcelist)-1] != destlist[len(destlist)-1] :
-            url = urlprime + 'delete/'
-            files = os.path.basename(event.src_path)
-            files = removeDisallowedFilenameChars(files)
+            url = urlprime+ 'delete/'
+            files = event.src_path.replace(path,'')
             files = files.replace(" ", "_")
             url=url+files
             r= requests.post(url)
             url = urlprime+'upload'
             file = None
-            try:
+            if not event.is_directory:
+                url += "file/"
                 files = {'file': open(event.dest_path,'r+')}
                 r = requests.post(url,files=files)
-            except IOError:
-                print ''
+                url = url.replace("uploadfile/","move/")
+                url += event.src_path.replace(path, '').replace(" ", "_")
+                r = requests.post(url)
+            else:
+                url += "/"
+                url += event.src_path.replace(path, '').replace(" ", "_") + '/'
+                r = requests.post(url)
 
 
 if __name__ == '__main__':
