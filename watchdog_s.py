@@ -11,8 +11,15 @@ def removeDisallowedFilenameChars(filename):
     cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
     return ''.join(c for c in cleanedFilename if c in validFilenameChars)
 
-path = 'C:\Users\PShao\Desktop\New folder\\'
+path = 'C:\Users\PShao\Desktop\New folder'
 urlprime = 'http://127.0.0.1:5000/'
+sync = True
+user = "user1"
+
+if not os.path.exists(path):
+            os.mkdir(path)
+            public = path+"/public"
+            os.mkdir(public)
 
 class OneDirHandler(FileSystemEventHandler):
     def on_created(self, event):
@@ -20,23 +27,26 @@ class OneDirHandler(FileSystemEventHandler):
         file = None
         if not event.is_directory:
             url += "file/"
+            url = url + user
+            url += event.src_path.replace(path, '').replace(" ", "_").replace("\\", "/")
             files = {'file': open(event.src_path,'r+')}
             r = requests.post(url,files=files)
-            url = url.replace("uploadfile/","move/")
-            url += event.src_path.replace(path, '').replace(" ", "_")
-            r = requests.post(url)
+            # url = url.replace("uploadfile/","move/")
+            # url = url + user
+            # url += event.src_path.replace(path, '').replace(" ", "_")
+            # r = requests.post(url)
         else:
             url += "/"
-            url += event.src_path.replace(path, '').replace(" ", "_") + '/'
+            url += user
+            url += event.src_path.replace(path, '').replace(" ", "_").replace("\\", "/") + '/'
             r = requests.post(url)
-
-
 
     def on_deleted(self, event):
         url = urlprime+ 'delete/'
         files = event.src_path.replace(path,'')
-        files = files.replace(" ", "_")
-        url=url+files
+        files = files.replace(" ", "_").replace("\\", "/")
+        url += user
+        url += files
         r= requests.post(url)
 
     def on_modified(self, event):
@@ -55,34 +65,49 @@ class OneDirHandler(FileSystemEventHandler):
 
         if source != dest or sourcelist[len(sourcelist)-1] != destlist[len(destlist)-1] :
             url = urlprime+ 'delete/'
-            files = event.src_path.replace(path,'')
+            files = event.src_path.replace(path,'').replace("\\", "/")
             files = files.replace(" ", "_")
+            url += user
             url=url+files
             r= requests.post(url)
             url = urlprime+'upload'
             file = None
             if not event.is_directory:
                 url += "file/"
+                url = url + user
+                url += event.dest_path.replace(path, '').replace(" ", "_").replace("\\", "/")
                 files = {'file': open(event.dest_path,'r+')}
                 r = requests.post(url,files=files)
-                url = url.replace("uploadfile/","move/")
-                url += event.src_path.replace(path, '').replace(" ", "_")
-                r = requests.post(url)
+                # url = url.replace("uploadfile/","move/")
+                # url += user
+                # url += event.src_path.replace(path, '').replace(" ", "_")
+                # r = requests.post(url)
             else:
                 url += "/"
-                url += event.src_path.replace(path, '').replace(" ", "_") + '/'
+                url += user
+                url += event.dest_path.replace(path, '').replace(" ", "_").replace("\\", "/") + '/'
                 r = requests.post(url)
-
+def switchsync():
+    global sync
+    if sync == True:
+        sync = False
+    else:
+        sync=True
 
 if __name__ == '__main__':
     handler = OneDirHandler()
     observer = Observer()
     observer.schedule(handler, path, recursive = True)
     observer.start()
-
     try:
         while True:
             time.sleep(1)
+            # while not sync:
+            #     r = raw_input("Type sync to turn on sync ")
+            #     if r == "sync":
+            #         switchsync()
     except KeyboardInterrupt:
         observer.stop()
     observer.join()
+
+

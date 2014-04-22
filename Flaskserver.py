@@ -15,34 +15,34 @@ def allowed_file(filename):
 def index():
     return render_template("index.html")
 
-@app.route('/uploadfile/', methods=['POST'])
-def upload():
+@app.route('/uploadfile/<path:filename>', methods=['POST'])
+def upload(filename):
+    filenamesplit = filename.rpartition("/")
+    uploadfileinsub(filenamesplit[0])
     file = request.files['file']
     if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        path = UPLOAD_FOLDER
+        path += filenamesplit[0]
+        file.save(os.path.join(path, filenamesplit[2]))
 
-@app.route('/upload/<filename>/', methods=['POST'])
+@app.route('/upload/<path:filename>/', methods=['POST'])
 def uploadfileinsub(filename):
-    filenamesplit = filename.split('\\')
+    filenamesplit = filename.split('/')
     path = UPLOAD_FOLDER
     for i in range(0,len(filenamesplit)):
         path += filenamesplit[i] + '/'
         if not os.path.exists(path):
             os.mkdir(path)
-@app.route('/move/<filename>', methods=['POST'])
-def move(filename):
-    filenamesplit = filename.rpartition("\\")
-    uploadfileinsub(filenamesplit[0])
-    shutil.move(UPLOAD_FOLDER+filenamesplit[2], UPLOAD_FOLDER+filenamesplit[0]+filenamesplit[1])
 
-
-@app.route('/delete/<filename>', methods=['POST'])
+@app.route('/delete/<path:filename>', methods=['POST'])
 def delete_file(filename):
     path = UPLOAD_FOLDER + filename
-    print path
     if op.exists(path):
+        if os.path.isdir(path):
+            os.rmdir(path)
         os.remove(path)
+
+
 
 if __name__ == '__main__':
     app.run()
