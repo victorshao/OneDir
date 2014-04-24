@@ -15,15 +15,20 @@ def allowed_file(filename):
 def index():
     return render_template("index.html")
 
+@app.route('/download/<path:filename>')
+def download(filename):
+    path = filename.rpartition('/')
+    return send_from_directory(app.config['UPLOAD_FOLDER']+path[0], path[2])
+
 @app.route('/uploadfile/<path:filename>', methods=['POST'])
 def upload(filename):
     filenamesplit = filename.rpartition("/")
     uploadfileinsub(filenamesplit[0])
-    file = request.files['file']
-    if file and allowed_file(file.filename):
+    f = request.files['file']
+    if f and allowed_file(f.filename):
         path = UPLOAD_FOLDER
         path += filenamesplit[0]
-        file.save(os.path.join(path, filenamesplit[2]))
+        f.save(os.path.join(path, filenamesplit[2]))
 
 @app.route('/upload/<path:filename>/', methods=['POST'])
 def uploadfileinsub(filename):
@@ -36,11 +41,14 @@ def uploadfileinsub(filename):
 
 @app.route('/delete/<path:filename>', methods=['POST'])
 def delete_file(filename):
-    path = UPLOAD_FOLDER + filename
-    if op.exists(path):
-        if os.path.isdir(path):
-            os.rmdir(path)
-        os.remove(path)
+    if not filename == "public/":
+        path = UPLOAD_FOLDER + filename
+        if op.exists(path):
+            if op.isdir(path):
+                shutil.rmtree(path)
+                os.rmdir(path)
+                print op.exists(path)
+            os.remove(path)
 
 
 

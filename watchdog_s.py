@@ -6,6 +6,8 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import unicodedata
 import string
+import user
+
 validFilenameChars = "-_.() %s%s" % (string.ascii_letters, string.digits)
 def removeDisallowedFilenameChars(filename):
     cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
@@ -15,10 +17,10 @@ path = 'C:\Users\PShao\Desktop\New folder'
 urlprime = 'http://127.0.0.1:5000/'
 sync = True
 user = "user1"
-
+public = path+"\public"
+publicid= "public"
 if not os.path.exists(path):
             os.mkdir(path)
-            public = path+"/public"
             os.mkdir(public)
 
 class OneDirHandler(FileSystemEventHandler):
@@ -27,27 +29,43 @@ class OneDirHandler(FileSystemEventHandler):
         file = None
         if not event.is_directory:
             url += "file/"
-            url = url + user
-            url += event.src_path.replace(path, '').replace(" ", "_").replace("\\", "/")
-            files = {'file': open(event.src_path,'r+')}
-            r = requests.post(url,files=files)
+            some = event.src_path.replace(path+"\\", '').replace("\\", "/").partition("/")
+            if some[0]== publicid:
+                url += event.src_path.replace(path +"\\", '').replace(" ", "_").replace("\\", "/")
+                files = {'file': open(event.src_path,'r+')}
+                r = requests.post(url,files=files)
+            else :
+                url = url + user
+                url += event.src_path.replace(path, '').replace(" ", "_").replace("\\", "/")
+                files = {'file': open(event.src_path,'r+')}
+                r = requests.post(url,files=files)
             # url = url.replace("uploadfile/","move/")
             # url = url + user
             # url += event.src_path.replace(path, '').replace(" ", "_")
             # r = requests.post(url)
         else:
             url += "/"
-            url += user
-            url += event.src_path.replace(path, '').replace(" ", "_").replace("\\", "/") + '/'
-            r = requests.post(url)
+            some = event.src_path.replace(path+"\\", '').replace("\\", "/").partition("/")
+            if some[0]== publicid:
+                url += event.src_path.replace(path+"\\", '').replace(" ", "_").replace("\\", "/") + '/'
+                r = requests.post(url)
+            else:
+                url += user
+                url += event.src_path.replace(path, '').replace(" ", "_").replace("\\", "/") + '/'
+                r = requests.post(url)
 
     def on_deleted(self, event):
         url = urlprime+ 'delete/'
-        files = event.src_path.replace(path,'')
-        files = files.replace(" ", "_").replace("\\", "/")
-        url += user
-        url += files
-        r= requests.post(url)
+        some = event.src_path.replace(path+"\\", '').replace("\\", "/").partition("/")
+        if some[0]== publicid:
+            url += event.src_path.replace(path+"\\", '').replace(" ", "_").replace("\\", "/")
+            r= requests.post(url)
+        else:
+            files = event.src_path.replace(path,'')
+            files = files.replace(" ", "_").replace("\\", "/")
+            url += user
+            url += files
+            r= requests.post(url)
 
     def on_modified(self, event):
         if not event.is_directory:
@@ -65,34 +83,55 @@ class OneDirHandler(FileSystemEventHandler):
 
         if source != dest or sourcelist[len(sourcelist)-1] != destlist[len(destlist)-1] :
             url = urlprime+ 'delete/'
-            files = event.src_path.replace(path,'').replace("\\", "/")
-            files = files.replace(" ", "_")
-            url += user
-            url=url+files
-            r= requests.post(url)
+            some = event.src_path.replace(path+"\\", '').replace("\\", "/").partition("/")
+            if some[0]== publicid:
+                url += event.src_path.replace(path+"\\", '').replace(" ", "_").replace("\\", "/")
+                r= requests.post(url)
+            else:
+                files = event.src_path.replace(path,'')
+                files = files.replace(" ", "_").replace("\\", "/")
+                url += user
+                url += files
+                r= requests.post(url)
             url = urlprime+'upload'
             file = None
             if not event.is_directory:
                 url += "file/"
-                url = url + user
-                url += event.dest_path.replace(path, '').replace(" ", "_").replace("\\", "/")
-                files = {'file': open(event.dest_path,'r+')}
-                r = requests.post(url,files=files)
+                some = event.dest_path.replace(path+"\\", '').replace("\\", "/").partition("/")
+                if some[0]== publicid:
+                    url += event.dest_path.replace(path+"\\", '').replace(" ", "_").replace("\\", "/")
+                    files = {'file': open(event.dest_path,'r+')}
+                    r = requests.post(url,files=files)
+                else :
+                    url = url + user
+                    url += event.dest_path.replace(path, '').replace(" ", "_").replace("\\", "/")
+                    files = {'file': open(event.dest_path,'r+')}
+                    r = requests.post(url,files=files)
                 # url = url.replace("uploadfile/","move/")
                 # url += user
                 # url += event.src_path.replace(path, '').replace(" ", "_")
                 # r = requests.post(url)
             else:
                 url += "/"
-                url += user
-                url += event.dest_path.replace(path, '').replace(" ", "_").replace("\\", "/") + '/'
-                r = requests.post(url)
+                some = event.dest_path.replace(path+"\\", '').replace("\\", "/").partition("/")
+                if some[0]== publicid:
+                    url += event.dest_path.replace(path+"\\", '').replace(" ", "_").replace("\\", "/") + '/'
+                    r = requests.post(url)
+                else:
+                    url += user
+                    url += event.dest_path.replace(path, '').replace(" ", "_").replace("\\", "/") + '/'
+                    r = requests.post(url)
 def switchsync():
     global sync
     if sync == True:
         sync = False
     else:
         sync=True
+
+def download(filename):
+    r = requests.get(urlprime + 'download/' + filename)
+    with open(filename, 'w+') as f:
+        f.write(r.content)
 
 if __name__ == '__main__':
     handler = OneDirHandler()
