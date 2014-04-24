@@ -2,13 +2,17 @@ import time
 import os
 import shutil
 import requests
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 import unicodedata
 import string
+<<<<<<< HEAD
 import user
+=======
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+>>>>>>> 6e6723649771cb14f4551e0ad79c9e214ba7e078
 
 validFilenameChars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+
 def removeDisallowedFilenameChars(filename):
     cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
     return ''.join(c for c in cleanedFilename if c in validFilenameChars)
@@ -20,10 +24,17 @@ user = "user1"
 public = path+"\public"
 publicid= "public"
 if not os.path.exists(path):
+<<<<<<< HEAD
             os.mkdir(path)
             os.mkdir(public)
+=======
+    os.mkdir(path)
+    public = path+"/public"
+    os.mkdir(public)
+>>>>>>> 6e6723649771cb14f4551e0ad79c9e214ba7e078
 
 class OneDirHandler(FileSystemEventHandler):
+    
     def on_created(self, event):
         url = urlprime +'upload'
         file = None
@@ -72,7 +83,6 @@ class OneDirHandler(FileSystemEventHandler):
             self.on_deleted(event)
             self.on_created(event)
 
-
     def on_moved(self, event):
         source = event.src_path #/Home/OneDir/text.txt
         dest = event.dest_path #/Home/OneDir/renamed.txt
@@ -113,6 +123,7 @@ class OneDirHandler(FileSystemEventHandler):
                 # r = requests.post(url)
             else:
                 url += "/"
+<<<<<<< HEAD
                 some = event.dest_path.replace(path+"\\", '').replace("\\", "/").partition("/")
                 if some[0]== publicid:
                     url += event.dest_path.replace(path+"\\", '').replace(" ", "_").replace("\\", "/") + '/'
@@ -121,12 +132,24 @@ class OneDirHandler(FileSystemEventHandler):
                     url += user
                     url += event.dest_path.replace(path, '').replace(" ", "_").replace("\\", "/") + '/'
                     r = requests.post(url)
+=======
+                url += user
+                url += event.dest_path.replace(path, '').replace(" ", "_").replace("\\", "/") + '/'
+                r = requests.post(url)
+                
+>>>>>>> 6e6723649771cb14f4551e0ad79c9e214ba7e078
 def switchsync():
     global sync
-    if sync == True:
+    if sync:
         sync = False
     else:
-        sync=True
+        sync = True
+
+def download(filename):
+    r = requests.get(urlprime + 'download/' + filename)
+    with open(filename, 'w+') as f:
+        f.write(r.content)
+        
 
 def download(filename):
     r = requests.get(urlprime + 'download/' + filename)
