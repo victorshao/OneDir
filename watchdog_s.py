@@ -2,11 +2,13 @@ import time
 import os
 import shutil
 import requests
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 import unicodedata
 import string
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
 validFilenameChars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+
 def removeDisallowedFilenameChars(filename):
     cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
     return ''.join(c for c in cleanedFilename if c in validFilenameChars)
@@ -17,11 +19,12 @@ sync = True
 user = "user1"
 
 if not os.path.exists(path):
-            os.mkdir(path)
-            public = path+"/public"
-            os.mkdir(public)
+    os.mkdir(path)
+    public = path+"/public"
+    os.mkdir(public)
 
 class OneDirHandler(FileSystemEventHandler):
+    
     def on_created(self, event):
         url = urlprime +'upload'
         file = None
@@ -53,7 +56,6 @@ class OneDirHandler(FileSystemEventHandler):
         if not event.is_directory:
             self.on_deleted(event)
             self.on_created(event)
-
 
     def on_moved(self, event):
         source = event.src_path #/Home/OneDir/text.txt
@@ -87,12 +89,19 @@ class OneDirHandler(FileSystemEventHandler):
                 url += user
                 url += event.dest_path.replace(path, '').replace(" ", "_").replace("\\", "/") + '/'
                 r = requests.post(url)
+                
 def switchsync():
     global sync
-    if sync == True:
+    if sync:
         sync = False
     else:
-        sync=True
+        sync = True
+
+def download(filename):
+    r = requests.get(urlprime + 'download/' + filename)
+    with open(filename, 'w+') as f:
+        f.write(r.content)
+        
 
 if __name__ == '__main__':
     handler = OneDirHandler()
