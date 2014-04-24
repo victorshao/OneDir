@@ -1,21 +1,24 @@
 import os
 import os.path as op
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash, session, abort, g
-from werkzeug.utils import secure_filename
 import shutil
 import sqlite3
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash, session, abort, g
+from werkzeug.utils import secure_filename
+
 app = Flask(__name__)
 UPLOAD_FOLDER = 'templates/uploads/'
-ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'PNG' , 'jpg', 'jpeg', 'gif'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'PNG' , 'jpg', 'jpeg', 'gif'])
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
 @app.route('/')
 def index():
     return render_template("index.html")
 
-#UNTESTED. WORKS IN THEORY. I HAVE CONFIDENCE IN MY CODE.
+#UNTESTED. WORKS IN THEORY--I HAVE CONFIDENCE IN MY CODE
 @app.route('/download/<path:filename>')
 def download(filename):
     path = filename.rpartition('/')
@@ -50,7 +53,6 @@ def delete_file(filename):
                 os.rmdir(path)
                 print op.exists(path)
             os.remove(path)
-
 
 
 if __name__ == '__main__':
