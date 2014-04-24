@@ -101,6 +101,34 @@ def download(filename):
     r = requests.get(urlprime + 'download/' + filename)
     with open(filename, 'w+') as f:
         f.write(r.content)
+
+#UNTESTED UNTIL HISTORY IS COMPLETE
+def startupUpdate():
+    #find last time a file was modified
+    lastmodified = 0
+    for i in os.walk(path):
+        for f in path[2]:
+            if f[0] != '~': #ignore hidden files
+                t = os.path.getmtime(path[0] + '\\' + f)
+                if t > lastmodified:
+                    lastmodified = t
+
+    #convert timestamp to string in a format sql can handle
+    lastmtimestamp = str(datetime.datetime.fromtimestamp(lastmodified))[:23]
+    #NEED TO CHECK DATABASE NAME
+    download('history.db')
+    conn = sqlite3.connect('history.db')
+    to_update = {}
+    with conn:
+        cur = conn.cursor()
+        #NEED TO CHECK TABLE AND COLUMN NAMES
+        sql_cmd = 'select * from activitylog where datetime(timestamp) > ?'
+        cur.execute(sql_cmd, (lastmtimestamp,))
+        while True:
+            row = cur.fetchone()
+            if row is None:
+                break
+            #NEED HISTORY FOR REMAINDER OF CODE
         
 
 if __name__ == '__main__':
