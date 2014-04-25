@@ -50,7 +50,6 @@ def delete_file(filename):
             if op.isdir(path):
                 shutil.rmtree(path)
                 os.rmdir(path)
-                print op.exists(path)
             os.remove(path)
 
 

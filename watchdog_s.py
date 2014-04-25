@@ -9,9 +9,6 @@ import string
 import user
 
 validFilenameChars = "-_.() %s%s" % (string.ascii_letters, string.digits)
-def removeDisallowedFilenameChars(filename):
-    cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
-    return ''.join(c for c in cleanedFilename if c in validFilenameChars)
 
 path = 'C:\Users\joyce jian\OneDir\\'
 urlprime = 'http://127.0.0.1:5000/'
@@ -20,8 +17,8 @@ user = "user1"
 public = path+"\public"
 publicid= "public"
 if not os.path.exists(path):
-            os.mkdir(path)
-            os.mkdir(public)
+    os.mkdir(path)
+    os.mkdir(public)
 
 class OneDirHandler(FileSystemEventHandler):
     def on_created(self, event):
@@ -59,13 +56,13 @@ class OneDirHandler(FileSystemEventHandler):
         some = event.src_path.replace(path+"\\", '').replace("\\", "/").partition("/")
         if some[0]== publicid:
             url += event.src_path.replace(path+"\\", '').replace(" ", "_").replace("\\", "/")
-            r= requests.post(url)
+            r = requests.post(url)
         else:
             files = event.src_path.replace(path,'')
             files = files.replace(" ", "_").replace("\\", "/")
             url += user
             url += files
-            r= requests.post(url)
+            r = requests.post(url)
 
     def on_modified(self, event):
         if not event.is_directory:
@@ -121,12 +118,20 @@ class OneDirHandler(FileSystemEventHandler):
                     url += user
                     url += event.dest_path.replace(path, '').replace(" ", "_").replace("\\", "/") + '/'
                     r = requests.post(url)
+
                     
+def removeDisallowedFilenameChars(filename):
+    cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
+    return ''.join(c for c in cleanedFilename if c in validFilenameChars)
+
 def switchsync():
     global sync
     sync = not sync
 
+#'filename' is the path to the file to be downloaded
+#'rootdir' is the directory where the file will be downloaded
 def download(filename, rootdir=path):
+    #create directories the file should be in
     dirs = filename.split('\\')
     for i in range(len(dirs)-1):
         dirpath = rootdir
@@ -134,13 +139,13 @@ def download(filename, rootdir=path):
             dirpath = os.path.join(dirpath, d)
         if not os.path.isdir(dirpath):
             os.mkdir(dirpath)
-    print filename[-1:]
+    #actually download file, if it is one
     if filename[-1:] != '\\':
         r = requests.get(urlprime + 'download/' + filename.replace('\\', '/'))
         with open(os.path.join(rootdir, filename), 'w+') as f:
             f.write(r.content)
 
-#UNTESTED UNTIL HISTORY IS COMPLETE
+#UNTESTED
 def startupUpdate():
     #find last time a file was modified
     lastmodified = 0
@@ -166,7 +171,16 @@ def startupUpdate():
             row = cur.fetchone()
             if row is None:
                 break
-            #NEED HISTORY FUNCTIONALITY FOR REMAINDER OF CODE
+            to_update[row[0]] = row[1]
+
+    for f in to_update:
+        if to_update[f] == 'delete':
+            p = os.path.join(path, f)
+            #have to change this section to work for directories
+            if os.path.exists(p):
+                os.remove(p)
+        else:
+            download(f, path)
 
 
 if __name__ == '__main__':
@@ -175,6 +189,7 @@ if __name__ == '__main__':
     observer = Observer()
     observer.schedule(handler, path, recursive = True)
     observer.start()
+    
     try:
         while True:
             time.sleep(1)
