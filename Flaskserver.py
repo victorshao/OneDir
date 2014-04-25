@@ -1,7 +1,5 @@
 import os
 import os.path as op
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash, session, abort, g
-from werkzeug.utils import secure_filename
 import shutil
 import sqlite3
 import time
@@ -11,10 +9,9 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'templates/uploads/'
-ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'PNG' , 'jpg', 'jpeg', 'gif'])
-DATABASE = 'history.db'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'PNG' , 'jpg', 'jpeg', 'gif'])
+DATABASE = 'history.db'
 
 def allowed_file(filename):
     return '.' in filename and \
