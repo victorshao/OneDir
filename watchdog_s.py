@@ -13,7 +13,7 @@ def removeDisallowedFilenameChars(filename):
     cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore')
     return ''.join(c for c in cleanedFilename if c in validFilenameChars)
 
-path = 'C:\Users\PShao\Desktop\New folder'
+path = 'C:\Users\joyce jian\OneDir\\'
 urlprime = 'http://127.0.0.1:5000/'
 sync = True
 user = "user1"
@@ -124,15 +124,21 @@ class OneDirHandler(FileSystemEventHandler):
                     
 def switchsync():
     global sync
-    if sync == True:
-        sync = False
-    else:
-        sync=True
+    sync = not sync
 
-def download(filename):
-    r = requests.get(urlprime + 'download/' + filename)
-    with open(filename, 'w+') as f:
-        f.write(r.content)
+def download(filename, rootdir=path):
+    dirs = filename.split('\\')
+    for i in range(len(dirs)-1):
+        dirpath = rootdir
+        for d in dirs[:i+1]:
+            dirpath = os.path.join(dirpath, d)
+        if not os.path.isdir(dirpath):
+            os.mkdir(dirpath)
+    print filename[-1:]
+    if filename[-1:] != '\\':
+        r = requests.get(urlprime + 'download/' + filename.replace('\\', '/'))
+        with open(os.path.join(rootdir, filename), 'w+') as f:
+            f.write(r.content)
 
 #UNTESTED UNTIL HISTORY IS COMPLETE
 def startupUpdate():
@@ -148,7 +154,7 @@ def startupUpdate():
     #convert timestamp to string in a format sql can handle
     lastmtimestamp = str(datetime.datetime.fromtimestamp(lastmodified))[:23]
     #NEED TO CHECK DATABASE NAME
-    download('history.db')
+    download('history.db', os.getcwd())
     conn = sqlite3.connect('history.db')
     to_update = {}
     with conn:
@@ -164,6 +170,7 @@ def startupUpdate():
 
 
 if __name__ == '__main__':
+    
     handler = OneDirHandler()
     observer = Observer()
     observer.schedule(handler, path, recursive = True)

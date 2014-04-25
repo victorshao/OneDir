@@ -18,7 +18,6 @@ def allowed_file(filename):
 def index():
     return render_template("index.html")
 
-#UNTESTED. WORKS IN THEORY--I HAVE CONFIDENCE IN MY CODE
 @app.route('/download/<path:filename>')
 def download(filename):
     path = filename.rpartition('/')
