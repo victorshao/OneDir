@@ -9,6 +9,7 @@ import user
 import sys
 import datetime
 import sqlite3
+import music
 
 path = 'C:\Users\PShao\Desktop\New folder'
 urlprime = 'http://127.0.0.1:5000/'
@@ -27,6 +28,7 @@ class watcher:
     user = None
     def __init__(self, user2, prime):
         global user
+        global urlprime
         urlprime = prime
         user = user2.get_user_id()
 
@@ -202,6 +204,7 @@ class watcher:
                 self.download(f, path)
 
     def main(self):
+        start = music.start()
         while not user == None:
             handler = self.OneDirHandler()
             observer = Observer()
@@ -218,6 +221,7 @@ class watcher:
                 observer.stop()
             observer.join()
     def halt(self):
+        exit = music.exit()
         sys.exit(0)
 
 
@@ -225,5 +229,4 @@ if __name__ == "__main__":
     user1 = user.user()
     user1.set_user_id("s")
     watch = watcher(user1, 'http://127.0.0.1:5000/')
-    watch.halt()
     watch.main()
