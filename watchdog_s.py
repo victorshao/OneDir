@@ -11,26 +11,27 @@ import datetime
 import sqlite3
 import music
 
-path = 'C:\Users\PShao\Desktop\New folder'
+path = os.path.expanduser('~/onedir')
 urlprime = 'http://127.0.0.1:5000/'
-public = path+"\public"
+public = path+"/public"
 publicid= "public"
 if not os.path.exists(path):
     os.mkdir(path)
     os.mkdir(public)
+
 class watcher:
     global urlprime
     global publicid
     global path
-
-
     sync = True
     user = None
+
     def __init__(self, user2, prime):
         global user
         global urlprime
         urlprime = prime
         user = user2.get_user_id()
+        start = music.start()
 
 
     class OneDirHandler(FileSystemEventHandler):
@@ -43,15 +44,15 @@ class watcher:
             file = None
             if not event.is_directory:
                 url += "file/"
-                some = event.src_path.replace(path+"\\", '').replace("\\", "/").partition("/")
+                some = event.src_path.replace(path+"/", '').partition("/")
                 if some[0]== publicid:
-                    url += event.src_path.replace(path +"\\", '').replace(" ", "_").replace("\\", "/")
+                    url += event.src_path.replace(path +"/", '')
                     files = {'file': open(event.src_path,'r+')}
                     r = requests.post(url,files=files)
                 else :
                     url = url + user
-                    url += event.src_path.replace(path, '').replace(" ", "_").replace("\\", "/")
-                    files = {'file': open(event.src_path,'r+')}
+                    url += event.src_path.replace(path+"/", '')
+                    files = {'file': open(event.src_path+"/",'r+')}
                     r = requests.post(url,files=files)
                 # url = url.replace("uploadfile/","move/")
                 # url = url + user
@@ -59,13 +60,13 @@ class watcher:
                 # r = requests.post(url)
             else:
                 url += "/"
-                some = event.src_path.replace(path+"\\", '').replace("\\", "/").partition("/")
+                some = event.src_path.replace(path+"/", '').partition("/")
                 if some[0]== publicid:
-                    url += event.src_path.replace(path+"\\", '').replace(" ", "_").replace("\\", "/") + '/'
+                    url += event.src_path.replace(path+"/", '') + '/'
                     r = requests.post(url)
                 else:
                     url += user
-                    url += event.src_path.replace(path, '').replace(" ", "_").replace("\\", "/") + '/'
+                    url += event.src_path.replace(path+"/", '') + '/'
                     r = requests.post(url)
 
         def on_deleted(self, event):
@@ -73,13 +74,12 @@ class watcher:
             global publicid
             global path
             url = urlprime+ 'delete/'
-            some = event.src_path.replace(path+"\\", '').replace("\\", "/").partition("/")
+            some = event.src_path.replace(path+"/", '').partition("/")
             if some[0]== publicid:
-                url += event.src_path.replace(path+"\\", '').replace(" ", "_").replace("\\", "/")
+                url += event.src_path.replace(path+"/", '')
                 r= requests.post(url)
             else:
-                files = event.src_path.replace(path,'')
-                files = files.replace(" ", "_").replace("\\", "/")
+                files = event.src_path.replace(path+"/",'')
                 url += user
                 url += files
                 r= requests.post(url)
@@ -99,20 +99,19 @@ class watcher:
             global path
             source = event.src_path #/Home/OneDir/text.txt
             dest = event.dest_path #/Home/OneDir/renamed.txt
-            sourcelist = source.split("\\") #remove the file name at the end of the source path
-            destlist = dest.split('\\') #remove file name at the end of the dest path
+            sourcelist = source.split("/") #remove the file name at the end of the source path
+            destlist = dest.split('/') #remove file name at the end of the dest path
             source = source.replace(sourcelist[len(sourcelist)-1],"")
             dest = dest.replace(destlist[len(destlist)-1], "")
 
             if source != dest or sourcelist[len(sourcelist)-1] != destlist[len(destlist)-1] :
                 url = urlprime+ 'delete/'
-                some = event.src_path.replace(path+"\\", '').replace("\\", "/").partition("/")
+                some = event.src_path.replace(path+"/", '').partition("/")
                 if some[0]== publicid:
-                    url += event.src_path.replace(path+"\\", '').replace(" ", "_").replace("\\", "/")
+                    url += event.src_path.replace(path+"/", '')
                     r= requests.post(url)
                 else:
-                    files = event.src_path.replace(path,'')
-                    files = files.replace(" ", "_").replace("\\", "/")
+                    files = event.src_path.replace(path+"/",'')
                     url += user
                     url += files
                     r= requests.post(url)
@@ -120,14 +119,14 @@ class watcher:
                 file = None
                 if not event.is_directory:
                     url += "file/"
-                    some = event.dest_path.replace(path+"\\", '').replace("\\", "/").partition("/")
+                    some = event.dest_path.replace(path+"/", '').partition("/")
                     if some[0]== publicid:
-                        url += event.dest_path.replace(path+"\\", '').replace(" ", "_").replace("\\", "/")
+                        url += event.dest_path.replace(path+"/", '')
                         files = {'file': open(event.dest_path,'r+')}
                         r = requests.post(url,files=files)
                     else :
                         url = url + user
-                        url += event.dest_path.replace(path, '').replace(" ", "_").replace("\\", "/")
+                        url += event.dest_path.replace(path+"/", '')
                         files = {'file': open(event.dest_path,'r+')}
                         r = requests.post(url,files=files)
                     # url = url.replace("uploadfile/","move/")
@@ -136,13 +135,13 @@ class watcher:
                     # r = requests.post(url)
                 else:
                     url += "/"
-                    some = event.dest_path.replace(path+"\\", '').replace("\\", "/").partition("/")
+                    some = event.dest_path.replace(path+"/", '').partition("/")
                     if some[0]== publicid:
-                        url += event.dest_path.replace(path+"\\", '').replace(" ", "_").replace("\\", "/") + '/'
+                        url += event.dest_path.replace(path+"/", '')+ '/'
                         r = requests.post(url)
                     else:
                         url += user
-                        url += event.dest_path.replace(path, '').replace(" ", "_").replace("\\", "/") + '/'
+                        url += event.dest_path.replace(path+"/", '') + '/'
                         r = requests.post(url)
 
     def switchsync(self):
@@ -153,7 +152,7 @@ class watcher:
     #'rootdir' is the directory where the file will be downloaded
     def download(self, filename, rootdir=path):
         #create directories the file should be in
-        dirs = filename.split('\\')
+        dirs = filename.split('/')
         for i in range(len(dirs)-1):
             dirpath = rootdir
             for d in dirs[:i+1]:
@@ -161,8 +160,8 @@ class watcher:
             if not os.path.isdir(dirpath):
                 os.mkdir(dirpath)
         #actually download file, if it is one
-        if filename[-1:] != '\\':
-            r = requests.get(urlprime + 'download/' + filename.replace('\\', '/'))
+        if filename[-1:] != '/':
+            r = requests.get(urlprime + 'download/' + filename)
             with open(os.path.join(rootdir, filename), 'w+') as f:
                 f.write(r.content)
 
@@ -173,7 +172,7 @@ class watcher:
         for i in os.walk(path):
             for f in path[2]:
                 if f[0] != '~': #ignore hidden files
-                    t = os.path.getmtime(path[0] + '\\' + f)
+                    t = os.path.getmtime(path[0] + '/' + f)
                     if t > lastmodified:
                         lastmodified = t
 
@@ -204,7 +203,6 @@ class watcher:
                 self.download(f, path)
 
     def main(self):
-        start = music.start()
         while not user == None:
             handler = self.OneDirHandler()
             observer = Observer()
@@ -221,12 +219,12 @@ class watcher:
                 observer.stop()
             observer.join()
     def halt(self):
-        exit = music.exit()
+        # exit = music.exit()
         sys.exit(0)
 
 
 if __name__ == "__main__":
     user1 = user.user()
-    user1.set_user_id("s")
+    user1.set_user_id("abs")
     watch = watcher(user1, 'http://127.0.0.1:5000/')
     watch.main()
