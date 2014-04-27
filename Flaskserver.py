@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-UPLOAD_FOLDER = 'templates/uploads/'
+UPLOAD_FOLDER = os.path.expanduser('~/uploads/')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'PNG' , 'jpg', 'jpeg', 'gif'])
 DATABASE = 'history.db'
@@ -28,11 +28,12 @@ def download(filename):
 
 @app.route('/uploadfile/<path:filename>', methods=['POST'])
 def upload(filename):
+    filename = filename.replace("%20", " ")
     type = "upload"
     time2 = time.time()
     time1 = datetime.datetime.fromtimestamp(time2).strftime('%Y-%m-%d %H:%M:%S')
     database = sqlite3.connect(DATABASE)
-    c = database.cursor
+    c = database.cursor()
     c.execute("INSERT INTO history (type, file_name, formal_time, informal_time )VALUES(?,?,?,?)",(type, filename, time1, time2))
     database.commit()
     database.close()
@@ -46,11 +47,12 @@ def upload(filename):
 
 @app.route('/upload/<path:filename>/', methods=['POST'])
 def uploadfileinsub(filename):
+    filename = filename.replace("%20", " ")
     type = "upload"
     time2 = time.time()
     time1 = datetime.datetime.fromtimestamp(time2).strftime('%Y-%m-%d %H:%M:%S')
     database = sqlite3.connect(DATABASE)
-    c = database.cursor
+    c = database.cursor()
     c.execute("INSERT INTO history (type, file_name, formal_time, informal_time )VALUES(?,?,?,?)",(type, filename, time1, time2))
     database.commit()
     database.close()
@@ -63,6 +65,7 @@ def uploadfileinsub(filename):
 
 @app.route('/delete/<path:filename>', methods=['POST'])
 def delete_file(filename):
+    filename = filename.replace("%20", " ")
     if not filename == "public/":
         path = UPLOAD_FOLDER + filename
         if op.exists(path):
@@ -74,15 +77,10 @@ def delete_file(filename):
     time2 = time.time()
     time1 = datetime.datetime.fromtimestamp(time2).strftime('%Y-%m-%d %H:%M:%S')
     database = sqlite3.connect(DATABASE)
-    c = database.cursor
+    c = database.cursor()
     c.execute("INSERT INTO history (type, file_name, formal_time, informal_time )VALUES(?,?,?,?)",(type, filename, time1, time2))
     database.commit()
     database.close()
-    path = UPLOAD_FOLDER + filename
-    if op.exists(path):
-        if os.path.isdir(path):
-            os.rmdir(path)
-        os.remove(path)
 
 def create_table():
     database = sqlite3.connect(DATABASE)
