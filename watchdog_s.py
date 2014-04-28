@@ -13,8 +13,8 @@ import music
 
 path = os.path.expanduser('~/onedir')
 urlprime = 'http://127.0.0.1:5000/'
-public = path+"/public"
-publicid= "public"
+public = path + "/public"
+publicid = "public"
 if not os.path.exists(path):
     os.mkdir(path)
     os.mkdir(public)
@@ -137,7 +137,7 @@ class watcher:
                     url += "/"
                     some = event.dest_path.replace(path+"/", '').partition("/")
                     if some[0]== publicid:
-                        url += event.dest_path.replace(path+"/", '')+ '/'
+                        url += event.dest_path.replace(path+"/", '') + '/'
                         r = requests.post(url)
                     else:
                         url += user
@@ -152,55 +152,54 @@ class watcher:
     #'rootdir' is the directory where the file will be downloaded
     def download(self, filename, rootdir=path):
         #create directories the file should be in
-        dirs = filename.split('/')
-        for i in range(len(dirs)-1):
-            dirpath = rootdir
-            for d in dirs[:i+1]:
-                dirpath = os.path.join(dirpath, d)
+        dirs = rootdir.split('/')
+        dirpath = ''
+        for i in dirs[:-1]:
+            dirpath = os.path.join(dirpath, i)
             if not os.path.isdir(dirpath):
                 os.mkdir(dirpath)
         #actually download file, if it is one
         if filename[-1:] != '/':
-            r = requests.get(urlprime + 'download/' + filename)
-            with open(os.path.join(rootdir, filename), 'w+') as f:
+            r = requests.get(urlprime + 'download/' + user + '/' + filename)
+            with open(os.path.join(rootdir, filename[filename.find('/')+1:]), 'w+b') as f:
                 f.write(r.content)
 
-    #UNTESTED
     def startupUpdate(self):
         #find last time a file was modified
         lastmodified = 0
-        for i in os.walk(path):
-            for f in path[2]:
-                if f[0] != '~': #ignore hidden files
-                    t = os.path.getmtime(path[0] + '/' + f)
-                    if t > lastmodified:
-                        lastmodified = t
+        for dirname, subdirs, files in os.walk(path):
+            if '.git' in subdirs:
+                subdirs.remove('.git')
+            for f in files:
+                t = os.path.getmtime(os.path.join(dirname, f))
+                if t > lastmodified:
+                    lastmodified = t
 
         #convert timestamp to string in a format sql can handle
-        lastmtimestamp = str(datetime.datetime.fromtimestamp(lastmodified))[:23]
-        #NEED TO CHECK DATABASE NAME
-        self.download('history.db', os.getcwd())
+        lastmtimestamp = str(datetime.datetime.fromtimestamp(lastmodified))[:19]
+        print lastmtimestamp
+        self.download('history.db', '')
         conn = sqlite3.connect('history.db')
         to_update = {}
         with conn:
             cur = conn.cursor()
-            #NEED TO CHECK TABLE AND COLUMN NAMES
-            sql_cmd = 'select * from activitylog where datetime(timestamp) > ?'
+            sql_cmd = 'select * from history where datetime(formal_time) > datetime(?)'
             cur.execute(sql_cmd, (lastmtimestamp,))
             while True:
                 row = cur.fetchone()
                 if row is None:
                     break
-                to_update[row[0]] = row[1]
-
+                to_update[row[1]] = row[0]
+                
         for f in to_update:
             if to_update[f] == 'delete':
                 p = os.path.join(path, f)
-                #have to change this section to work for directories
-                if os.path.exists(p):
+                if os.path.isdir(p):
+                    shutil.rmtree(p)
+                else if os.path.exists(p):
                     os.remove(p)
             else:
-                self.download(f, path)
+                self.download(f.replace('/', '\\'), '')
 
     def main(self):
         while not user == None:
@@ -218,6 +217,7 @@ class watcher:
             except KeyboardInterrupt:
                 observer.stop()
             observer.join()
+
     def halt(self):
         # exit = music.exit()
         sys.exit(0)

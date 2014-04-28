@@ -13,6 +13,10 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'PNG' , 'jpg', 'jpeg', 'gif'])
 DATABASE = 'history.db'
 
+if not os.path.exists(UPLOAD_FOLDER):
+    os.mkdir(UPLOAD_FOLDER)
+    os.mkdir(UPLOAD_FOLDER + 'public/')
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
@@ -23,6 +27,7 @@ def index():
 
 @app.route('/download/<path:filename>')
 def download(filename):
+    filename = filename.replace("%20", " ")
     path = filename.rpartition('/')
     return send_from_directory(app.config['UPLOAD_FOLDER']+path[0], path[2])
 
@@ -32,55 +37,56 @@ def upload(filename):
     type = "upload"
     time2 = time.time()
     time1 = datetime.datetime.fromtimestamp(time2).strftime('%Y-%m-%d %H:%M:%S')
-    database = sqlite3.connect(DATABASE)
-    c = database.cursor()
-    c.execute("INSERT INTO history (type, file_name, formal_time, informal_time )VALUES(?,?,?,?)",(type, filename, time1, time2))
-    database.commit()
-    database.close()
+    username = filename[:filename.find('/')]
+    database = sqlite3.connect(UPLOAD_FOLDER + username + '\\' + DATABASE)
+    with database:
+        c = database.cursor()
+        c.execute("INSERT INTO history VALUES(?,?,?,?)", (type, filename, time1, time2))
+
     filenamesplit = filename.rpartition("/")
     uploadfileinsub(filenamesplit[0])
     f = request.files['file']
     if f and allowed_file(f.filename):
-        path = UPLOAD_FOLDER
-        path += filenamesplit[0]
-        f.save(os.path.join(path, filenamesplit[2]))
+        path = UPLOAD_FOLDER + filename
+        with open(path, 'w+b') as f2:
+            shutil.copyfileobj(f, f2)
 
 @app.route('/upload/<path:filename>/', methods=['POST'])
 def uploadfileinsub(filename):
     filename = filename.replace("%20", " ")
     type = "upload"
-    time2 = time.time()
-    time1 = datetime.datetime.fromtimestamp(time2).strftime('%Y-%m-%d %H:%M:%S')
-    database = sqlite3.connect(DATABASE)
-    c = database.cursor()
-    c.execute("INSERT INTO history (type, file_name, formal_time, informal_time )VALUES(?,?,?,?)",(type, filename, time1, time2))
-    database.commit()
-    database.close()
     filenamesplit = filename.split('/')
+    username = filename[:filename.find('/')]
+    database = sqlite3.connect(UPLOAD_FOLDER + username + '/' + DATABASE)
     path = UPLOAD_FOLDER
-    for i in range(0,len(filenamesplit)):
-        path += filenamesplit[i] + '/'
-        if not os.path.exists(path):
-            os.mkdir(path)
+    with database:
+        c = database.cursor()
+        for i in filenamesplit:
+            path += i + '/'
+            if not os.path.exists(path):
+                time2 = time.time()
+                time1 = datetime.datetime.fromtimestamp(time2).strftime('%Y-%m-%d %H:%M:%S')
+                c.execute("INSERT INTO history VALUES(?,?,?,?)", (type, path, time1, time2))
+                os.mkdir(path)
 
 @app.route('/delete/<path:filename>', methods=['POST'])
 def delete_file(filename):
-    filename = filename.replace("%20", " ")
+    filename = filename.replace('%20', ' ')
     if not filename == "public/":
-        path = UPLOAD_FOLDER + filename
-        if op.exists(path):
-            if op.isdir(path):
-                shutil.rmtree(path)
-                os.rmdir(path)
-            os.remove(path)
-    type = "delete"
-    time2 = time.time()
-    time1 = datetime.datetime.fromtimestamp(time2).strftime('%Y-%m-%d %H:%M:%S')
-    database = sqlite3.connect(DATABASE)
-    c = database.cursor()
-    c.execute("INSERT INTO history (type, file_name, formal_time, informal_time )VALUES(?,?,?,?)",(type, filename, time1, time2))
-    database.commit()
-    database.close()
+    	type = "delete"
+    	username = filename[:filename.find('/')]
+    	database = sqlite3.connect(UPLOAD_FOLDER + username + '\\' + DATABASE)
+    	with database:
+        	c = database.cursor
+        	path = UPLOAD_FOLDER + filename
+        	if op.exists(path):
+            		time2 = time.time()
+            		time1 = datetime.datetime.fromtimestamp(time2).strftime('%Y-%m-%d %H:%M:%S')
+            		c.execute("INSERT INTO history VALUES(?,?,?,?)", (type, path, time1, time2))
+            		if op.isdir(path):
+                		shutil.rmtree(path)
+            		else:
+                		os.remove(path)
 
 def create_table():
     database = sqlite3.connect(DATABASE)
